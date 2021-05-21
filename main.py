@@ -1,64 +1,33 @@
 from src.downloader import Downloader
 from src.to_csv import to_csv
 from src.moss_processor import moss_process
-import sys
+import argparse
 
 if __name__ == "__main__":
-    idx = 1
-    login_file = "login"
-    contests_file = "contests"
-    url = ["https://codeforces.com/", "/contest/{}?locale=en"]
-    browser = "Safari"
-    data = "data"
-    moss_id = None
-    csv_path = None
-    while idx < len(sys.argv):
-        if sys.argv[idx][0] == '-':
-            if idx + 1 >= len(sys.argv):
-                raise ValueError(
-                    "{} passed without parameter".format(sys.argv[idx])
-                )
-            param = sys.argv[idx][1:]
-            if param == "login":
-                login_file = sys.argv[idx + 1]
-                idx += 1
-            elif param == "contests":
-                contests_file = sys.argv[idx + 1]
-                idx += 1
-            elif param == "browser":
-                browser = sys.argv[idx + 1]
-                idx += 1
-            elif param == "data":
-                data = sys.argv[idx + 1]
-                idx += 1
-            elif param == "group":
-                url = "group/{}".format(sys.argv[idx + 1]).join(url)
-                idx += 1
-            elif param == "mossId":
-                moss_id = int(sys.argv[idx + 1])
-                idx += 1
-            elif param == "csvPath":
-                csv_path = sys.argv[idx + 1]
-                idx += 1
-            else:
-                raise ValueError("Bad argument parameter '{}'".format(param))
-        idx += 1
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--login", help="Path to file with login and password", default="login")
+    parser.add_argument("--contests", help="Path to file with contest id's", default="contests")
+    parser.add_argument("--browser", help="Browser to use", default="Safari")
+    parser.add_argument("--submissions", help="Folder to store submissions", default="data")
+    parser.add_argument("--url", help="URL to codeforces contest with '{}' where id should be", required=True)
+    parser.add_argument("--moss_id", help="Moss ID to use", required=True)
+    parser.add_argument("--output_csv", help="Output csv file path", default="result.csv")
+    args = parser.parse_args()
 
-    with open(login_file, 'r') as user_file:
-        user = user_file.readline()[:-1]
-        password = user_file.readline()[:-1]
-    print(user, password, contests_file, url, browser, data)
-    downloader = Downloader(user,
-                            password,
-                            contests_file,
-                            url,
-                            browser,
-                            data)
+    with open(args.login) as login_file:
+        lines = login_file.readlines()
+        login = lines[0].strip()
+        password = lines[1].strip()
 
-    if moss_id is None:
-        exit(0)
+    with open(args.contests) as contest_file:
+        contests = []
+        for line in contest_file.readlines():
+            stripped = line.strip()
+            if len(stripped) > 0:
+                contests.append(stripped)
 
-    moss_process(data, moss_id)
+    print(login, password, contests, args.browser, args.submissions, args.url, args.moss_id, args.output_csv, sep='\n')
 
-    if csv_path is not None:
-        to_csv(data + "/report", csv_path)
+    downloader = Downloader(login, password, contests, args.url, args.browser, args.submissions)
+
+    moss_process(args.submissions, args.moss_id)
