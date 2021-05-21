@@ -173,7 +173,10 @@ class Downloader:
             name, problem = key.split(',')
             name = name.strip()[1:-1]
             problem = problem.strip()[1:-1]
-            self._download_submission(contest, name, problem, submission)
+            try:
+                self._download_submission(contest, name, problem, submission)
+            except Exception:
+                pass
             downloaded.store(key)
 
     def __init__(self,
