@@ -176,7 +176,7 @@ class Downloader:
             try:
                 self._download_submission(contest, name, problem, submission)
             except Exception:
-                pass
+                print(key, submission, "FAILED")
             downloaded.store(key)
 
     def __init__(self,
