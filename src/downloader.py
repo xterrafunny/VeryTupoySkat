@@ -167,7 +167,7 @@ class Downloader:
 
         downloaded = KeyStore(f"contest {contest} downloaded", sep=':')
         for key, submission in participants.data.items():
-            if key in downloaded:
+            if key in downloaded or key == "page":
                 continue
             key = key[1: -1]
             name, problem = key.split(',')
