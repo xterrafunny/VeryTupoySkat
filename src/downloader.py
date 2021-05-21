@@ -175,9 +175,10 @@ class Downloader:
             problem = problem.strip()[1:-1]
             try:
                 self._download_submission(contest, name, problem, submission)
-            except Exception:
+            except Exception as e:
                 print(key, submission, "FAILED")
-            downloaded.store(key)
+                print(f"Error {e}")
+            downloaded.store(f"({key})")
 
     def __init__(self,
                  user: str,
