@@ -12,6 +12,7 @@ if __name__ == "__main__":
     parser.add_argument("--url", help="URL to codeforces contest with '{}' where id should be", required=True)
     parser.add_argument("--moss_id", help="Moss ID to use", required=True)
     parser.add_argument("--output_csv", help="Output csv file path", default="result.csv")
+    parser.add_argument("--resource_path", help="Path to Chromedriver", default="/usr/local/bin/chromedriver")
     args = parser.parse_args()
 
     with open(args.login) as login_file:

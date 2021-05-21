@@ -8,7 +8,7 @@ class Downloader:
     def _select_driver(self, browser):
         self.driver = None
         if browser == "Chrome":
-            self.driver = webdriver.Chrome()
+            self.driver = webdriver.Chrome(self.resource_path)
         elif browser == "Firefox":
             self.driver = webdriver.Firefox()
         elif browser == "Opera":
@@ -186,8 +186,10 @@ class Downloader:
                  contests: list,
                  contest_url_template: str = "http://codeforces.com",
                  browser: str = "Chrome",
-                 store_path: str = "data"):
+                 store_path: str = "data",
+                 resource_path: str = "/usr/local/bin/chromedriver"):
         self.timeout = 100
+        self.resource_path = resource_path
         self.store_path = store_path
         self.contests = contests
         self._select_driver(browser)
