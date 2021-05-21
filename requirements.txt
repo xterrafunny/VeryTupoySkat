@@ -1,0 +1,4 @@
+mosspy
+selenium
+clipboard
+redis

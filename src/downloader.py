@@ -1,6 +1,7 @@
+import clipboard
+from src.persistent_store import KeyValueStore, KeyStore
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
-import clipboard
 
 
 class Downloader:
@@ -70,26 +71,19 @@ class Downloader:
 
             WebDriverWait(self.driver, self.timeout).until(login_correct)
 
-    def _parse_contests(self,
-                        contest_list_path: str):
-        self.contests = []
-        with open(contest_list_path, "r") as contests:
-            for line in contests.readlines():
-                self.contests.append(line.strip())
-
     def _process_page(self,
                       page_index: int,
-                      participants: dict,
+                      participants: KeyValueStore,
                       contest: str):
         url = self.template.format(
-            contest + "/status/page/{}?order=BY_JUDGED_DESC".format(page_index)
+            contest + "/status?pageIndex={}&order=BY_JUDGED_DESC".format(page_index)
         )
         self.driver.get(url)
 
         def check_current_page(driver: webdriver.Chrome):
             nonlocal page_index
             active_page = driver.find_element_by_class_name("active")
-            return int(active_page.get_attribute("pageindex")) == page_index
+            return int(active_page.get_attribute("pageIndex")) == page_index
 
         WebDriverWait(self.driver, self.timeout).until(check_current_page)
         table = self.driver.find_element_by_class_name(
@@ -107,12 +101,11 @@ class Downloader:
             submission_id = row.get_attribute("data-submission-id")
             columns = row.find_elements_by_tag_name("td")
             name = str(columns[2].find_element_by_tag_name("a").text).strip()
-            problem = str(
-                columns[3].find_element_by_tag_name("a").text
-            ).strip()
+            problem = str(columns[3].find_element_by_tag_name("a").text).strip()
             problem = problem.split()[0]
-            if participants.get((name, problem)) is None:
-                participants[(name, problem)] = submission_id
+            key = str((name, problem))
+            if key not in participants:
+                participants.store(key, submission_id)
 
     def _download_submission(self,
                              contest: str,
@@ -131,7 +124,7 @@ class Downloader:
         while clipboard.paste() == "":
             copy_elem = self.driver.find_element_by_class_name("caption")
             copy_elem.find_elements_by_tag_name("div")[1].click()
-        with open("{}/{}-{}-{}.txt".format(self.store_path,
+        with open("{}/{}-{}-{}.cpp".format(self.store_path,
                                            contest,
                                            problem, name), "w") as sol:
             sol.write(clipboard.paste())
@@ -164,29 +157,41 @@ class Downloader:
         WebDriverWait(self.driver, self.timeout).until(status_load_correct)
         page_index = self.driver.find_elements_by_class_name("page-index")
         pages_cnt = int(page_index[-1].get_attribute("pageindex"))
-        participants = dict()
-        for page_idx in range(1, pages_cnt + 1):
+        participants = KeyValueStore(f"contest {contest}", sep=':')
+        start_page = 1
+        if "page" in participants:
+            start_page = int(participants.load("page"))
+        for page_idx in range(start_page, pages_cnt + 1):
             self._process_page(page_idx, participants, contest)
+            participants.store("page", str(page_idx))
 
-        for (name, problem) in participants:
-            self._download_submission(contest, name, problem,
-                                      participants[(name, problem)])
+        downloaded = KeyStore(f"contest {contest} downloaded", sep=':')
+        for key, submission in participants.data.items():
+            if key in downloaded:
+                continue
+            key = key[1: -1]
+            name, problem = key.split(',')
+            name = name.strip()[1:-1]
+            problem = problem.strip()[1:-1]
+            self._download_submission(contest, name, problem, submission)
+            downloaded.store(key)
 
     def __init__(self,
                  user: str,
                  password: str,
-                 contest_list_path: str,
+                 contests: list,
                  contest_url_template: str = "http://codeforces.com",
                  browser: str = "Chrome",
                  store_path: str = "data"):
-
         self.timeout = 100
         self.store_path = store_path
-        self._parse_contests(contest_list_path)
+        self.contests = contests
         self._select_driver(browser)
         self._login(user, password)
         self.template = contest_url_template
         clipboard.copy("")
         for contest in self.contests:
             self._process_contest(contest)
+
+    def __del__(self):
         self.driver.close()
