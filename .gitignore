@@ -1,0 +1,8 @@
+venv
+
+contest*
+contest *
+result.csv
+data/
+
+!contests
