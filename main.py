@@ -1,10 +1,12 @@
+from argparse import ArgumentParser
+from os import path
+
 from src.downloader import Downloader
 from src.to_csv import to_csv
 from src.moss_processor import moss_process
-import argparse
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument("--login", help="Path to file with login and password", default="login")
     parser.add_argument("--contests", help="Path to file with contest id's", default="contests")
     parser.add_argument("--browser", help="Browser to use", default="Safari")
@@ -27,8 +29,7 @@ if __name__ == "__main__":
             if len(stripped) > 0:
                 contests.append(stripped)
 
-    print(login, password, contests, args.browser, args.submissions, args.url, args.moss_id, args.output_csv, sep='\n')
-
-    downloader = Downloader(login, password, contests, args.url, args.browser, args.submissions)
-
+    downloader = Downloader(login, password, contests, args.url, args.browser,
+                            args.submissions)
     moss_process(args.submissions, args.moss_id)
+    to_csv(path.join(args.data, "report"), args.output_path)
