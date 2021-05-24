@@ -21,26 +21,21 @@ def to_csv(path_to_data: str,
                     path_to_data,
                     "{}/{}".format(problem_dir, file)), 'r') as current:
                 content = ''.join(current.readlines())
-                # if problem_dir == "314449-A" and file == "match39-top.html":
-                #     print(content)
                 contestants = re.findall(r"\d{6}-\w-.{1,50}\.cpp \(\d+%\)",
                                          content)
-                if problem_dir == "314449-A" and file == "match39-top.html":
-                    print(contestants)
                 plagiarism[contest][problem].append([])
                 for contestant in contestants:
                     submission, percent = contestant.split()
                     percent = percent[1:-2]
                     submission = submission[9:-4]
+                    plagiarism[contest][problem][-1].append(int(percent))
                     plagiarism[contest][problem][-1].append(submission)
-                    plagiarism[contest][problem][-1].append(percent)
-
     with open(result_path, "w") as file:
         for contest in plagiarism:
             for problem in plagiarism[contest]:
-                for arr in plagiarism[contest][problem]:
+                for arr in reversed(sorted(plagiarism[contest][problem])):
                     file.write(contest + ',' + problem + ','
-                               + ','.join(arr) + '\n')
+                               + f"{arr[0]},{arr[1]},{arr[2]},{arr[3]}\n")
 
 
 if __name__ == "__main__":
